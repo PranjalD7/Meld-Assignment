@@ -73,7 +73,7 @@ async def get_reviews_by_category(
   # Queue Celery tasks for missing tone/sentiment
     for review in reviews:
         if not review.tone and not review.sentiment:
-            print("we are here boi")
+
             # Both tone and sentiment are missing
             llm_sentiment_prediction.delay(
                 id=review.id, missing_var="both", text=review.text, stars=review.stars

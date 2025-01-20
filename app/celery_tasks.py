@@ -53,9 +53,8 @@ def llm_sentiment_prediction(id: int, missing_var: str, text: str, stars: int):
                 {"question": f"Generate the sentiment for this review. The text of the review is '{text}' and the rating given is {stars}."}
             )
         elif missing_var == "both":
-            print(f"Generate11 the tone for this review. The text of the review ='{text}' and the rating={stars}.")
             review.tone = chain.invoke(
-                {"question": f"Generate the tone for this review. The text of the review ='{text}' and the rating={stars}.Only return the tone in one word as the output and nothing else"}
+                 {"question": f"Generate the tone for this review. The text of the review '{text}' and the rating given is {stars}."}
             )
             review.sentiment = chain.invoke(
                 {"question": f"Generate the sentiment for this review. The text of the review is '{text}' and the rating given is {stars}."}
