@@ -2,13 +2,15 @@
 from pydantic import BaseModel,ConfigDict
 from typing import Optional
 from datetime import datetime
-
+from typing import List, Optional
 
 # Schema for Category
-class CategorySchema(BaseModel):
+class CategorySchemaResponse(BaseModel):
     id: int
     name: str
     description: Optional[str]
+    average_stars:float
+    total_reviews:int
 
     class Config:
         orm_mode = True
@@ -27,3 +29,7 @@ class ReviewSchema(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+    
+class PaginatedReviewsResponse(BaseModel):
+    reviews: List[ReviewSchema]
+    next_cursor: Optional[str]  
