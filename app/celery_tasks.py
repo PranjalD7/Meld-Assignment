@@ -37,13 +37,13 @@ def llm_sentiment_prediction(id: int, missing_var: str, text: str, stars: int):
     """Predict tone, sentiment, or both using LLM, and update the database."""
     db = SessionLocal()
     try:
-        # Fetch the review entry
+        # Fetching the review entry
         review = db.query(ReviewHistory).filter(ReviewHistory.id == id).first()
 
         if not review:
             raise ValueError(f"No review found with id: {id}")
 
-        # Generate tone or sentiment as needed
+        # Generating tone or sentiment as needed
         if missing_var == "tone":
             review.tone = chain.invoke(
                 {"question": f"Generate the tone for this review. The text of the review '{text}' and the rating given is {stars}."}

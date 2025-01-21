@@ -4,10 +4,10 @@ from .database import init_db
 
 app = FastAPI()
 
-# Initialize the database
+# Initializing the database
 init_db()
 
-# Register routers
+# Registering routers
 app.include_router(reviews.router, prefix="/reviews", tags=["Reviews"])
 
 @app.get("/")

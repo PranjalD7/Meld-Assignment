@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import datetime
 from typing import List, Optional
 
-# Schema for Category
+# Schema for Category api response
 class CategorySchemaResponse(BaseModel):
     id: int
     name: str
@@ -16,7 +16,7 @@ class CategorySchemaResponse(BaseModel):
         orm_mode = True
 
 
-# Schema for Review History
+# Schema for Review History api response
 class ReviewSchema(BaseModel):
     id: int
     text: Optional[str]
@@ -29,7 +29,7 @@ class ReviewSchema(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-    
+#schema to accomodate next_cursor in response
 class PaginatedReviewsResponse(BaseModel):
     reviews: List[ReviewSchema]
     next_cursor: Optional[str]  

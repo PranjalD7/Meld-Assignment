@@ -33,7 +33,7 @@ async def get_review_trends(db: Session = Depends(get_db)):
     )
     # Alias for joining the subquery with ReviewHistory
     latest_reviews = aliased(ReviewHistory)
-    # Fetch top 5 categories by average stars
+    # Fetching top 5 categories by average stars
      # Main query: Join latest reviews with Category and calculate aggregates
     query = (
         db.query(
@@ -57,7 +57,7 @@ async def get_review_trends(db: Session = Depends(get_db)):
     print(results)
     if not results:
         raise HTTPException(status_code=404, detail="No categories found")
-       # Convert results to Pydantic schema manually
+       # Converting results to Pydantic schema manually
     print(results[0].average_stars)
     response = [
     {
@@ -77,10 +77,10 @@ async def get_review_trends(db: Session = Depends(get_db)):
 async def get_reviews_by_category(
     category_id: int, cursor: str = None, db: Session = Depends(get_db)
 ):
-    # Log the access asynchronously
+    # Logging the access asynchronously
     log_access_task.delay(f"GET /reviews/?category_id={category_id}")
 
-    # Define the page size
+    # Defining the page size
     page_size = 15
 
     # Subquery to get the latest `created_at` for each `review_id`
@@ -96,7 +96,7 @@ async def get_reviews_by_category(
     # Alias for ReviewHistory to join with the subquery
     latest_reviews = aliased(ReviewHistory)
 
-    # Main query: Fetch reviews for the category using the latest entries
+    # Main query: Fetching reviews for the category using the latest entries
     query = (
         db.query(latest_reviews)
         .join(
@@ -107,18 +107,18 @@ async def get_reviews_by_category(
         .filter(latest_reviews.category_id == category_id)
     )
 
-    # Apply cursor-based pagination if the cursor is provided
+    # Applying cursor-based pagination if the cursor is provided
     if cursor:
         cursor_datetime = datetime.fromisoformat(cursor)
         query = query.filter(latest_reviews.created_at < cursor_datetime)
 
-    # Sort reviews by `created_at` and limit to `page_size`
+    # Sorting reviews by `created_at` and limit to `page_size`
     reviews = query.order_by(latest_reviews.created_at.desc()).limit(page_size).all()
 
     if not reviews:
         raise HTTPException(status_code=404, detail="No reviews found")
 
-    # Queue Celery tasks for missing tone/sentiment
+    # Queueing Celery tasks for missing tone/sentiment
     for review in reviews:
         if not review.tone and not review.sentiment:
             # Both tone and sentiment are missing
@@ -136,10 +136,10 @@ async def get_reviews_by_category(
                 id=review.id, missing_var="sentiment", text=review.text, stars=review.stars
             )
 
-    # Construct the response
+    # Constructing the response
     response = [ReviewSchema.model_validate(review) for review in reviews]
 
-    # Add the next cursor to the response if there are more results
+    # Adding the next cursor to the response if there are more results
     next_cursor = reviews[-1].created_at.isoformat() if len(reviews) == page_size else None
 
     return {"reviews": response, "next_cursor": next_cursor}
