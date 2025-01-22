@@ -11,6 +11,10 @@ router = APIRouter()
 
 
 def get_db():
+    """
+    Provides a database session for dependency injection.
+    Ensures the session is closed after use.
+    """
     db = SessionLocal()
     try:
         yield db
@@ -20,9 +24,25 @@ def get_db():
 
 @router.get("/trends",response_model=list[CategorySchemaResponse])
 async def get_review_trends(db: Session = Depends(get_db)):
+    """
+    Retrieves the top 5 categories based on the average stars of the latest reviews.
+    
+    - The latest review is determined for each review_id.
+    - Categories are ranked by the descending average of stars from their latest reviews.
+    - Saves an access log asynchronously.
+
+    Args:
+        db (Session): Database session.
+
+    Returns:
+        List[CategorySchemaResponse]: A list of top 5 categories with their average stars and total reviews.
+    """
+    
+    # Log the access event asynchronously
     log_access_task.delay("GET /reviews/trends")
     
-      # Subquery: Get the latest review for each review_id
+    
+    # Subquery to get the latest review for each review_id
     latest_reviews_subquery = (
         db.query(
             ReviewHistory.review_id,
@@ -31,10 +51,12 @@ async def get_review_trends(db: Session = Depends(get_db)):
         .group_by(ReviewHistory.review_id)
         .subquery()
     )
+    
     # Alias for joining the subquery with ReviewHistory
     latest_reviews = aliased(ReviewHistory)
+    
     # Fetching top 5 categories by average stars
-     # Main query: Join latest reviews with Category and calculate aggregates
+    # Main query: Join latest reviews with Category and calculate aggregates
     query = (
         db.query(
             Category.id.label("id"),
@@ -53,12 +75,15 @@ async def get_review_trends(db: Session = Depends(get_db)):
         .order_by(func.avg(latest_reviews.stars).desc())
         .limit(5)
     )
+    
+    # Execute the query and fetch results
     results = query.all()
-    print(results)
+    
+    
     if not results:
         raise HTTPException(status_code=404, detail="No categories found")
-       # Converting results to Pydantic schema manually
-    print(results[0].average_stars)
+    
+    # Converting results to Pydantic schema manually
     response = [
     {
         "id": category.id,
@@ -75,13 +100,30 @@ async def get_review_trends(db: Session = Depends(get_db)):
 
 @router.get("/", response_model=PaginatedReviewsResponse)
 async def get_reviews_by_category(
-    category_id: int, cursor: str = None, db: Session = Depends(get_db)
-):
+    category_id: int, cursor: str = None, db: Session = Depends(get_db)):
+    
+    """
+    Fetches reviews for a specific category using cursor-based pagination.
+    
+    - Retrieves the latest version of each review.
+    - Supports pagination with a cursor (based on `created_at` timestamp).
+    - Logs access events asynchronously.
+    - Initiates Celery tasks to calculate tone and sentiment if they are missing.
+
+    Args:
+        category_id (int): The ID of the category to fetch reviews for.
+        cursor (str, optional): ISO timestamp of the last review in the previous page.
+        db (Session): Database session.
+
+    Returns:
+        PaginatedReviewsResponse: A list of reviews and the next cursor for pagination.
+    """
+
     # Logging the access asynchronously
     log_access_task.delay(f"GET /reviews/?category_id={category_id}")
 
     # Defining the page size
-    page_size = 15
+    page_size = 3
 
     # Subquery to get the latest `created_at` for each `review_id`
     latest_reviews_subquery = (
